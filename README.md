@@ -1,2 +1,7 @@
-# PyConES2019_Aprendiendo_como_aprenden_las_maquinas
-Taller "Aprendiendo cómo aprenden las máquinas" preparado por los organizadores de PyDataMallorca para la PyConES2019
+# PyConES2019 Aprendiendo cómo aprenden las máquinas
+Taller "Aprendiendo cómo aprenden las máquinas" preparado por los organizadores de [PyDataMallorca](https://twitter.com/PyDataMallorca) para la [PyConES2019](https://2019.es.pycon.org/).
+
+## Contacto
+* Twitter: https://twitter.com/PyDataMallorca
+* Meetup: https://www.meetup.com/es/PyData-Mallorca/
+* Github: https://github.com/PyDataMallorca
