@@ -22,3 +22,5 @@ Taller de 3 horas destinado a comprender el funcionamiento de los algoritmos má
 * Twitter: https://twitter.com/PyDataMallorca
 * Meetup: https://www.meetup.com/es/PyData-Mallorca/
 * Github: https://github.com/PyDataMallorca
+
+![](./images/PyDataMallorca_logo.png)
