@@ -1,0 +1,11 @@
+name: pycones19
+channels:
+  - conda-forge
+dependencies:
+  - numpy
+  - matplotlib
+  - pandas
+  - notebook
+  - scikit-learn
+  - seaborn
+  - python-graphviz
