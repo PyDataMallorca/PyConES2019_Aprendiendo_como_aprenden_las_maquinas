@@ -1,4 +1,7 @@
-# PyConES2019 Aprendiendo cómo aprenden las máquinas
+# PyConES2019: Aprendiendo cómo aprenden las máquinas
+
+[![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/PyDataMallorca/PyConES2019_Aprendiendo_como_aprenden_las_maquinas/master)
+
 Taller "Aprendiendo cómo aprenden las máquinas" preparado por los organizadores de [PyDataMallorca](https://twitter.com/PyDataMallorca) para la [PyConES2019](https://2019.es.pycon.org/).
 
 # Preparación imprescindible antes del taller
@@ -70,6 +73,8 @@ Taller de 3 horas destinado a comprender el funcionamiento de los algoritmos má
 * Guillem Duran [twitter](https://twitter.com/Miau_DB).
 
 * Kiko Correoso ([pybonacci.org](https://pybonacci.org), [twitter](https://twitter.com/Pybonacci)).
+
+* Jordi Contestí.
 
 # Contacto
 
