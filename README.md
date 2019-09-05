@@ -11,7 +11,7 @@ Taller "Aprendiendo cómo aprenden las máquinas" preparado por los organizadore
 Necesitarás lo siguiente:
 
 * Un portátil.
-* Descargar los materiales para el curso y descomprimirlos en el portátil ([usa este enlace para descargarlos](https://github.com/PyDataMallorca/FTW2019_Introduccion_a_data_science_en_Python/archive/master.zip)).
+* Descargar los materiales para el curso y descomprimirlos en el portátil ([usa este enlace para descargarlos](https://github.com/PyDataMallorca/PyConES2019_Aprendiendo_como_aprenden_las_maquinas/archive/master.zip)).
 * Python 3.6 o superior instalado.
 * Las librerías que vamos a usar (Jupyter, Numpy, Matplotlib, Pandas y Scikit-Learn).
 
