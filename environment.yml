@@ -8,4 +8,8 @@ dependencies:
   - notebook
   - scikit-learn
   - seaborn
-  - python-graphviz
+  - imageio
+  - pillow
+  - pip
+  pip:
+    - mglearn
