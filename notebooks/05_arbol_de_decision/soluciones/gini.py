@@ -26,4 +26,4 @@ def calculate_gi(df, col):
     return gi
 
 for col in df.columns:
-    print(f"{col}: {calculate_gi_tiempo(df, col):5.3f}")
+    print(f"{col}: {calculate_gi(df, col):5.3f}")
