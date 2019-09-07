@@ -11,5 +11,5 @@ dependencies:
   - imageio
   - pillow
   - pip
-  pip:
+  - pip:
     - mglearn
