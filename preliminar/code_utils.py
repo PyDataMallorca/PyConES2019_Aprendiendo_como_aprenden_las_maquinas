@@ -174,10 +174,10 @@ def safe_margin(val, low=True, pct: float=0.05):
 
 def example_meshgrid(X, n_bins=10, low_th: float=0.95, high_th:float=1.05):
     low_x, high_x = X[:, 0].min(), X[:, 0].max()
-    low_x = safe_margin(low_x)
-    high_x = safe_margin(high_x, False)
     low_y, high_y = X[:, 1].min(), X[:, 1].max()
+    low_x = safe_margin(low_x)
     low_y = safe_margin(low_y)
+    high_x = safe_margin(high_x, False)
     high_y = safe_margin(high_y, False)
     xs = np.linspace(low_x, high_x, n_bins)
     ys = np.linspace(low_y, high_y, n_bins)
@@ -217,7 +217,7 @@ def plot_boundary(model, min_x, max_x):
 def plot_probability_grid(model, X):
     probabilities, xs, ys = predict_grid(model, X)
     data = pd.DataFrame()
-    qmesh = hv.QuadMesh((xs, ys, probabilities))
+    qmesh = hv.QuadMesh((xs, ys, probabilities)).opts(colorbar=True, width=500, height=400)
     return qmesh
 
 def plot_model_output(model, X, y):
@@ -256,6 +256,7 @@ class RegLogTrainingPlotter:
         return self.reglog.__repr__()
 
     def fit(self, X, y, X_test, y_test):
+        self.create_plot()
         self.reglog._initialize_weights(X)
         for i in range(self.reglog.num_iters):
             self.curr_iter = i
@@ -306,12 +307,13 @@ class RegLogTrainingPlotter:
 
 class ModelPlotter:
 
-    def plot_interactive_image(self, grid):
+    @staticmethod
+    def plot_interactive_image(grid):
         img = hv.Image(grid)
         # Declare pointer stream initializing at (0, 0) and linking to Image
         pointer = streams.PointerXY(x=0, y=0, source=img)
-
         # Define function to draw cross-hair and report value of image at location as text
+
         def cross_hair_info(x, y):
             text = hv.Text(x + 0.05, y, '%.3f %.3f %.3f' % (x, y, img[x, y]), halign='left',
                            valign='bottom')
@@ -320,35 +322,66 @@ class ModelPlotter:
         # Overlay image and cross_hair_info
         return img * hv.DynamicMap(cross_hair_info, streams=[pointer])
 
-    def plot_classes(self, model, X, y):
-        probs = model.predict_proba(X)[:, 1]
-        data = pd.DataFrame({"x": X[:, 0], "y": X[:, 1], "target": y, "porb": probs})
-        return hv.Scatter(data).opts(size=10, color="target", tools=["hover"], cmap="viridis")
+    @staticmethod
+    def plot_dataset(X, y, model=None, dim_0: int = 0, dim_1: int = 1,
+                     cmap: str = "viridis"):
+        data = pd.DataFrame({"x": X[:, dim_0], "y": X[:, dim_1], "target": y})
+        if model:
+            probs = model.predict_proba(X)
+            classes = model.predict(X)
+            data["prediction"] = classes
+            for i in range(probs.shape[1]):
+                data["prob_class_{}".format(i)] = probs[:, i]
+        return hv.Scatter(data).opts(size=10, color="target", tools=["hover"], cmap=cmap)
 
-    def plot_boundary(self, model, min_x, max_x):
-        theta = np.concatenate([model.intercept_, model.coef_[
-            0]])  # getting the x co-ordinates of the decision boundary
-        plot_x = np.array([min_x, max_x])
-        # getting corresponding y co-ordinates of the decision boundary
-        plot_y = (-1 / theta[2]) * (
-                    theta[1] * plot_x + theta[0])  # Plotting the Single Line Decision Boundary
-        data = pd.DataFrame({"x": plot_x, "y": plot_y})
-        return hv.Curve(data)
+    @classmethod
+    def plot_decision_boundaries(cls, model, X, class_names: str = None,
+                                 dim_x: int =0, dim_y: int=1):
+        """Plot the decission boundaries of a classification model."""
 
-    def plot_probability_grid(self, model, X):
-        probabilities, xs, ys = self.predict_grid(model, X)
-        data = pd.DataFrame()
+        min_x = cls.safe_bound(X[:, dim_x].min(), low=True, pct=0.075)
+        max_x = cls.safe_bound(X[:, dim_y].max(), low=False, pct=0.075)
+        plots = {}
+        for i, (intercept, coef) in enumerate(zip(model.intercept_.tolist(),
+                                                  model.coef_.tolist())):
+            # getting the x co-ordinates of the decision boundary
+            theta = np.concatenate([[intercept], coef])
+            plot_x = np.array([min_x, max_x])
+            # getting corresponding y co-ordinates of the decision boundary
+            plot_y = (-1 / coef[dim_y]) * (
+                    theta[dim_x] * plot_x + intercept)  # Plotting the Single Line Decision
+            # Boundary
+            data = pd.DataFrame({"x": plot_x, "y": plot_y})
+            boundary = hv.Curve(data).opts(line_width=5)
+            name = "class_{}".format(i) if class_names is None else class_names[i]
+            plots[name] = boundary
+        return hv.NdOverlay(plots, kdims="Decision boundaries")
+
+    @classmethod
+    def plot_probability_grid(cls, model, X):
+        probabilities, xs, ys = cls.predict_grid(model, X)
         qmesh = hv.QuadMesh((xs, ys, probabilities)).opts(tools=["hover"])
         return qmesh
 
-    def plot_model_output(self, model, X, y):
-        # img = plot_interactive_image(probabilities)
-        points = self.plot_classes(model, X, y)
-        boundary = self.plot_boundary(model, self.safe_bound(X[:, 0].min(), True, 0.075),
-                                      self.safe_bound(X[:, 0].max(), False, 0.075))
-        boundary = boundary.opts(line_width=5)
-        qmesh = self.plot_probability_grid(model, X)
+    @classmethod
+    def plot_binary_clasification(cls, model, X, y):
+        points = cls.plot_dataset(X, y, model=model)
+        boundary = cls.plot_decision_boundaries(model, X)
+        qmesh = cls.plot_probability_grid(model, X)
         return qmesh * points * boundary
+
+    @classmethod
+    def plot_classification(cls, model, X, y, dim_x: int=0, dim_y: int=1):
+        points = cls.plot_dataset(X, y, model=model)
+        boundary = cls.plot_decision_boundaries(model, X, dim_x=dim_x, dim_y=dim_y)
+        qmesh = cls.plot_regions(model, X)
+        return qmesh * points * boundary
+
+    @classmethod
+    def plot_regions(cls, model, X):
+        regions, xs, ys = cls.predict_classes(model, X)
+        qmesh = hv.QuadMesh((xs, ys, regions)).opts(tools=["hover"])
+        return qmesh
 
     @staticmethod
     def safe_bound(val, low=True, pct: float = 0.05):
@@ -356,26 +389,35 @@ class ModelPlotter:
         func = min if low else max
         return func(val * low_pct, val * high_pct)
 
-    def safe_bounds_fom_examples(self, X, x_col: int=0, y_col: int=1 ):
+    @classmethod
+    def safe_bounds_fom_examples(cls, X, x_col: int = 0, y_col: int = 1):
         low_x, high_x = X[:, x_col].min(), X[:, x_col].max()
-        low_x = self.safe_bound(low_x)
-        high_x = self.safe_bound(high_x, False)
+        low_x = cls.safe_bound(low_x)
+        high_x = cls.safe_bound(high_x, False)
         low_y, high_y = X[:, y_col].min(), X[:, y_col].max()
-        low_y = self.safe_bound(low_y)
-        high_y = self.safe_bound(high_y, False)
+        low_y = cls.safe_bound(low_y)
+        high_y = cls.safe_bound(high_y, False)
         return low_x, high_x, low_y, high_y
 
-    def example_meshgrid(self, X, n_bins=10, low_th: float = 0.95, high_th: float = 1.05):
-        low_x, high_x, low_y, high_y = self.safe_bounds_fom_examples(X)
+    @classmethod
+    def example_meshgrid(cls, X, n_bins=100, low_th: float = 0.95, high_th: float = 1.05):
+        low_x, high_x, low_y, high_y = cls.safe_bounds_fom_examples(X)
         xs = np.linspace(low_x, high_x, n_bins)
         ys = np.linspace(low_y, high_y, n_bins)
         return np.meshgrid(xs, ys)
 
-    def predict_grid(self, model, X):
-        x_grid, y_grid = self.example_meshgrid(X)
+    @classmethod
+    def predict_grid(cls, model, X):
+        if X.shape[1] != 2:
+            raise ValueError("Predict grid only accepts datasets with 2 features")
+        x_grid, y_grid = cls.example_meshgrid(X)
         grid = np.c_[x_grid.ravel(), y_grid.ravel()]
         probs = model.predict_proba(grid)[:, 1].reshape(x_grid.shape)
         return probs, x_grid, y_grid
 
-
-    
+    @classmethod
+    def predict_classes(cls, model, X):
+        x_grid, y_grid = cls.example_meshgrid(X)
+        grid = np.c_[x_grid.ravel(), y_grid.ravel()]
+        probs = model.predict(grid).reshape(x_grid.shape)
+        return probs, x_grid, y_grid
