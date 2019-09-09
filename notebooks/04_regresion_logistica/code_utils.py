@@ -1,3 +1,5 @@
+import warnings
+warnings.filterwarnings("ignore")
 import numpy as np
 import pandas as pd
 
@@ -55,6 +57,21 @@ def plot_confussion_matrix(y_test, y_pred, var_names: list=None, cmap: str="YlGn
     labeled = heatmap * hv.Labels(heatmap).opts(text_color=label_color, cmap=cmap)
     return labeled.options(xlabel=pred_label_name, ylabel=true_label_name, invert_yaxis=True)
 
+def plot_dataset_2d(X_train, y_train, X_test, y_test):
+
+    idx = y_train == 0
+    idx_test = y_test == 0
+    clase_0_train = hv.Scatter({"x": X_train[idx, 0], "y": X_train[idx, 1]},
+                               label="Clase 0 entrenamiento").opts(color='b', size=20, alpha=0.5, tools=["hover"])
+    clase_1_train = hv.Scatter({"x": X_train[~idx, 0], "y": X_train[~idx, 1]},
+                               label="Clase 1 entrenamiento").opts(color='r', size=20, alpha=0.5, tools=["hover"])
+    clase_0_test = hv.Scatter({"x": X_test[idx_test, 0], "y": X_test[idx_test, 1]},
+                               label="Clase 0 test").opts(color='b', size=20, alpha=0.5, marker="s", tools=["hover"])
+    clase_1_test = hv.Scatter({"x": X_test[~idx_test, 0], "y": X_test[~idx_test, 1]},
+                               label="Clase 1 test").opts(color='r', size=20, alpha=0.5, marker="s", tools=["hover"])
+    plot = clase_0_train * clase_1_train * clase_0_test * clase_1_test
+    return plot.opts(width=550, height=450, title="Dataset de ejemplo", xlabel="Feature 1", ylabel="Feature 2",
+                    legend_position="top", xlim=(7.5, 12.3), ylim=(-1.5, 6))
 
 class RegLog:
     """
@@ -119,7 +136,7 @@ class RegLog:
         """
         return (-y * np.log(sigmoid_output) - (1 - y) * np.log(1 - sigmoid_output)).mean()
 
-    def predict_prob(self, X: np.ndarray) -> np.ndarray:
+    def predict_proba(self, X: np.ndarray) -> np.ndarray:
         """
         Para cada ejemplo, predice la probabilidad de pertenecer a la clase 1.
 
@@ -177,7 +194,7 @@ class RegLog:
         """
         Actualiza los pesos del modelo realizando una iteración del algoritmo gradient descend.
         """
-        prediction = self.predict_prob(X_train)
+        prediction = self.predict_proba(X_train)
         loss = self.log_likelihood(prediction, y_train)
         # Guardar estos valores es un truco para calcular el gradiente mas eficientemente.
         self._prediction, self._y_train, self._X_train = prediction, y_train, X_train
@@ -246,9 +263,12 @@ def plot_interactive_image(grid):
     return img * hv.DynamicMap(cross_hair_info, streams=[pointer])
 
 def plot_classes(model, X, y):
-    probs = model.predict_proba(X)[:, 1]
+    try:
+        probs = model.predict_proba(X)[:, 1]
+    except:
+        probs = model.predict_proba(X)
     data = pd.DataFrame({"x": X[:, 0], "y": X[:, 1], "target": y, "porb": probs})
-    return hv.Scatter(data).opts(size=10, color="target", tools=["hover"], cmap="viridis")
+    return hv.Scatter(data).opts(size=10, color="target", tools=["hover"], cmap="paired")
 
 def plot_boundary(model, min_x, max_x):
     theta = np.concatenate([model.intercept_, model.coef_[0]])# getting the x co-ordinates of the decision boundary
@@ -262,7 +282,7 @@ def plot_boundary(model, min_x, max_x):
 def plot_probability_grid(model, X):
     probabilities, xs, ys = predict_grid(model, X)
     data = pd.DataFrame()
-    qmesh = hv.QuadMesh((xs, ys, probabilities)).opts(colorbar=True, width=500, height=400)
+    qmesh = hv.QuadMesh((xs, ys, probabilities)).opts(colorbar=True, width=500, height=400, cmap="YlGnBu")
     return qmesh
 
 def plot_model_output(model, X, y):
@@ -306,9 +326,9 @@ class RegLogTrainingPlotter:
         for i in range(self.reglog.num_iters):
             self.curr_iter = i
             self.reglog.training_iteration(X, y)
-            prediction = self.reglog.predict_prob(X)
+            prediction = self.reglog.predict_proba(X)
             self.train_loss = self.reglog.log_likelihood(prediction, y)
-            test_prediction = self.reglog.predict_prob(X_test)
+            test_prediction = self.reglog.predict_proba(X_test)
             self.test_loss = self.reglog.log_likelihood(test_prediction, y_test)
             self._record_loss()
             self._record_weights()
