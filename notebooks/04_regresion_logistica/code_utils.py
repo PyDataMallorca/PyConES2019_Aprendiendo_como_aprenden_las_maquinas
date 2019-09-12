@@ -153,7 +153,7 @@ def plot_model_evaluation(
     feature_names=None,
     normalize: bool = False,
     resolution: int = 100,
-    stacked: bool = True,
+    stacked: bool = False,
 ):
     y_pred_test = model.predict(X_test)
     X, y = np.concatenate([X_train, X_test]), np.concatenate([y_train, y_test])
@@ -178,7 +178,7 @@ def plot_model_evaluation(
 
 
 def interactive_logistic_regression(
-    X, y, target_names=None, feature_names=None, stacked: bool = True
+    X, y, target_names=None, feature_names=None, stacked: bool = False
 ):
     X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, random_state=42)
 
