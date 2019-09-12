@@ -1,6 +1,7 @@
 name: pycones19
 channels:
   - conda-forge
+  - pyviz
 dependencies:
   - numpy
   - matplotlib
@@ -11,5 +12,9 @@ dependencies:
   - imageio
   - pillow
   - pip
+  - holoviews
+  - hvplot
+  - panel
   - pip:
     - mglearn
+    - streamz

@@ -1,23 +1,48 @@
 import warnings
+
 warnings.filterwarnings("ignore")
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import confusion_matrix, classification_report
 import numpy as np
 import pandas as pd
-
 import holoviews as hv
 import hvplot.streamz
 import hvplot
 import hvplot.pandas
 from holoviews import streams
-
 import streamz
 from streamz.dataframe import DataFrame as StreamzDataFrame
-from sklearn.metrics import confusion_matrix
-
-
 from bokeh.models import HoverTool
-def plot_confussion_matrix(y_test, y_pred, var_names: list=None, cmap: str="YlGnBu",
-                          width=500, height: int=400, title: str="Confusion matrix",
-                          normalize: bool=False):
+from sklearn.neighbors.classification import KNeighborsClassifier
+from sklearn.manifold.t_sne import TSNE
+from panel import widgets
+import panel as pn
+
+
+def safe_margin(val, low=True, pct: float = 0.05):
+    low_pct, high_pct = 1 - pct, 1 + pct
+    func = min if low else max
+    return func(val * low_pct, val * high_pct)
+
+
+def safe_bounds(array, pct: float = 0.05):
+    low_x, high_x = array.min(), array.max()
+    low_x = safe_margin(low_x, pct=pct)
+    high_x = safe_margin(high_x, pct=pct, low=False)
+    return low_x, high_x
+
+
+def plot_confussion_matrix(
+    y_test,
+    y_pred,
+    target_names: list = None,
+    cmap: str = "YlGnBu",
+    width=500,
+    height: int = 400,
+    title: str = "Confusion matrix",
+    normalize: bool = False,
+):
     value_label = "examples"
     target_label = "true_label"
     pred_label = "predicted_label"
@@ -31,47 +56,191 @@ def plot_confussion_matrix(y_test, y_pred, var_names: list=None, cmap: str="YlGn
         coords = dist_melt.copy()
         coords[target_label] = dist_melt[target_label].values.codes
         coords[pred_label] = dist_melt[pred_label].values.codes
-        print(coords.columns)
         return coords[[pred_label, target_label, value_label]]
-    
+
     conf_matrix = confusion_matrix(y_test, y_pred)
     if normalize:
-        conf_matrix = np.round(conf_matrix.astype('float') / conf_matrix.sum(axis=1)[:, np.newaxis], 3)
+        conf_matrix = np.round(
+            conf_matrix.astype("float") / conf_matrix.sum(axis=1)[:, np.newaxis], 3
+        )
     # Adjust label color to make them readable when displayed on top of any colormap
     df = melt_distances_to_heatmap(pd.DataFrame(conf_matrix))
     mean = df[value_label].mean()
     df[label_color] = -df[value_label].apply(lambda x: int(x > mean))
-    if var_names is not None:
-        df[target_label] = df[target_label].apply(lambda x: var_names[x])
-        df[pred_label] = df[pred_label].apply(lambda x: var_names[x])
+    if target_names is not None:
+        df[target_label] = df[target_label].apply(lambda x: target_names[x])
+        df[pred_label] = df[pred_label].apply(lambda x: target_names[x])
     true_label_name = "Actual label"
     pred_label_name = "Predicted label"
-    
-    tooltip = [(true_label_name, "@{%s}" % target_label),
-               (pred_label_name, "@{%s}" %  pred_label),
-               ("Examples", "@{%s}" % value_label)]
+
+    tooltip = [
+        (true_label_name, "@{%s}" % target_label),
+        (pred_label_name, "@{%s}" % pred_label),
+        ("Examples", "@{%s}" % value_label),
+    ]
     hover = HoverTool(tooltips=tooltip)
     heatmap = hv.HeatMap(df, kdims=[pred_label, target_label])
-    heatmap.opts(title=title, colorbar=True, cmap=cmap,
-                 width=width, height=height, tools=[hover])
+    heatmap.opts(title=title, colorbar=True, cmap=cmap, width=width, height=height, tools=[hover])
     labeled = heatmap * hv.Labels(heatmap).opts(text_color=label_color, cmap=cmap)
     return labeled.options(xlabel=pred_label_name, ylabel=true_label_name, invert_yaxis=True)
+
+
+def plot_decision_boundaries(X, y, y_pred, resolution: int = 100):
+    embedding = TSNE(n_components=2, random_state=160290).fit_transform(X)
+
+    x_min, x_max = safe_bounds(embedding[:, 0])
+    y_min, y_max = safe_bounds(embedding[:, 1])
+    xx, yy = np.meshgrid(
+        np.linspace(x_min, x_max, resolution), np.linspace(y_min, y_max, resolution)
+    )
+
+    # approximate Voronoi tesselation on resolution x resolution grid using 1-NN
+    background_model = KNeighborsClassifier(n_neighbors=1).fit(embedding, y_pred)
+    voronoi_bg = background_model.predict(np.c_[xx.ravel(), yy.ravel()])
+    voronoi_bg = voronoi_bg.reshape((resolution, resolution))
+
+    mesh = hv.QuadMesh((xx, yy, voronoi_bg)).opts(cmap="viridis")
+    points = hv.Scatter(
+        {"x": embedding[:, 0], "y": embedding[:, 1], "pred": y_pred, "class": y},
+        kdims=["x", "y"],
+        vdims=["pred", "class"],
+    )
+    errors = y_pred != y
+    failed_points = hv.Scatter(
+        {"x": embedding[errors, 0], "y": embedding[errors, 1]}, kdims=["x", "y"]
+    ).opts(color="red", size=5, alpha=0.9)
+
+    points = points.opts(
+        color="pred", cmap="viridis", line_color="black", size=10, alpha=0.8, tools=["hover"]
+    )
+    plot = mesh * points * failed_points
+    plot = plot.opts(
+        xaxis=None, yaxis=None, width=500, height=450, title="Decision boundaries on TSNE"
+    )
+    return plot
+
+
+def plot_classification_report(y, y_pred, **kwargs):
+    report = classification_report(y, y_pred, output_dict=True, **kwargs)
+    df = pd.DataFrame(report).applymap(lambda x: "{:.2f}".format(x))
+    df = df.T.reset_index()
+    return hv.Table(df).opts(title="Classification report")
+
+
+def plot_feature_importances(model, target_names=None, feature_names=None, stacked: bool = False):
+    n_target, n_features = model.coef_.shape
+    ix = feature_names if feature_names is not None else list(range(n_features))
+    cols = (
+        target_names[:n_target]
+        if target_names is not None
+        else ["class_{}".format(i) for i in range(n_target)]
+    )
+    df = pd.DataFrame(index=ix, columns=cols, data=model.coef_.T)
+    df.index.name = "Features"
+    df.columns.name = "output_class"
+    bar = df.hvplot.bar(legend=True, stacked=stacked, rot=75)
+    bar = bar.opts(ylabel="Aggregated coefficients", title="Feature importances")
+    return bar
+
+
+def plot_model_evaluation(
+    model,
+    X_train,
+    y_train,
+    X_test,
+    y_test,
+    target_names=None,
+    feature_names=None,
+    normalize: bool = False,
+    resolution: int = 100,
+    stacked: bool = True,
+):
+    y_pred_test = model.predict(X_test)
+    X, y = np.concatenate([X_train, X_test]), np.concatenate([y_train, y_test])
+    y_pred_total = model.predict(X)
+    metrics = plot_classification_report(y=y_test, y_pred=y_pred_test, target_names=target_names)
+    conf_mat = plot_confussion_matrix(
+        y_test=y_test, y_pred=y_pred_test, target_names=target_names, normalize=normalize
+    )
+    bounds = plot_decision_boundaries(X=X, y=y, y_pred=y_pred_total, resolution=resolution)
+    features = plot_feature_importances(
+        model=model, target_names=target_names, feature_names=feature_names, stacked=stacked
+    )
+    gspec = pn.GridSpec(
+        min_height=1000, height=1000, max_height=1200, min_width=800, max_width=1980, width=800
+    )
+    gspec[1:3, 0:2] = bounds
+    gspec[0, 2:4] = metrics
+    gspec[0, 0:2] = pn.pane.HTML(str(model), margin=0)
+    gspec[1:3, 2:4] = conf_mat
+    gspec[3:5, :] = features
+    return gspec
+
+
+def interactive_logistic_regression(
+    X, y, target_names=None, feature_names=None, stacked: bool = True
+):
+    X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, random_state=42)
+
+    def interactive_model(C, penalty, fit_intercept, intercept_scaling, l1_ratio, class_weight):
+        model = LogisticRegression(C=C, penalty=penalty, solver="saga",
+                                   fit_intercept=fit_intercept,
+                                   intercept_scaling=intercept_scaling,
+                                   l1_ratio=l1_ratio, class_weight=class_weight,
+                                   random_state=42).fit(X, y)
+        return plot_model_evaluation(
+            model,
+            X_train,
+            y_train,
+            X_test,
+            y_test,
+            target_names=target_names,
+            feature_names=feature_names,
+            stacked=stacked,
+        )
+
+    c_slider = widgets.LiteralInput(value=1, name="C")
+    penalty_tog = widgets.RadioButtonGroup(
+        name="penalty", options=["none", "l1", "l2", "elasticnet"]
+    )
+    fit_intercept = widgets.Toggle(name="fit_intercept")
+    intercept_scaling = widgets.LiteralInput(value=1, name="intercept_scaling")
+    l1_ratio = widgets.FloatSlider(end=1., start=0., value=0.5, name="l1_ratio")
+    class_weight = widgets.LiteralInput(value=None, name="class_weight")
+    return pn.interact(interactive_model, C=c_slider, penalty=penalty_tog,
+                       fit_intercept=fit_intercept, intercept_scaling=intercept_scaling,
+                       l1_ratio=l1_ratio, class_weight=class_weight)
+
 
 def plot_dataset_2d(X_train, y_train, X_test, y_test):
 
     idx = y_train == 0
     idx_test = y_test == 0
-    clase_0_train = hv.Scatter({"x": X_train[idx, 0], "y": X_train[idx, 1]},
-                               label="Clase 0 entrenamiento").opts(color='b', size=20, alpha=0.5, tools=["hover"])
-    clase_1_train = hv.Scatter({"x": X_train[~idx, 0], "y": X_train[~idx, 1]},
-                               label="Clase 1 entrenamiento").opts(color='r', size=20, alpha=0.5, tools=["hover"])
-    clase_0_test = hv.Scatter({"x": X_test[idx_test, 0], "y": X_test[idx_test, 1]},
-                               label="Clase 0 test").opts(color='b', size=20, alpha=0.5, marker="s", tools=["hover"])
-    clase_1_test = hv.Scatter({"x": X_test[~idx_test, 0], "y": X_test[~idx_test, 1]},
-                               label="Clase 1 test").opts(color='r', size=20, alpha=0.5, marker="s", tools=["hover"])
+    clase_0_train = hv.Scatter(
+        {"x": X_train[idx, 0], "y": X_train[idx, 1]}, label="Clase 0 train"
+    ).opts(color="b", size=20, alpha=0.5, tools=["hover"])
+    clase_1_train = hv.Scatter(
+        {"x": X_train[~idx, 0], "y": X_train[~idx, 1]}, label="Clase 1 train"
+    ).opts(color="r", size=20, alpha=0.5, tools=["hover"])
+    clase_0_test = hv.Scatter(
+        {"x": X_test[idx_test, 0], "y": X_test[idx_test, 1]}, label="Clase 0 test"
+    ).opts(color="b", size=20, alpha=0.5, marker="s", tools=["hover"])
+    clase_1_test = hv.Scatter(
+        {"x": X_test[~idx_test, 0], "y": X_test[~idx_test, 1]}, label="Clase 1 test"
+    ).opts(color="r", size=20, alpha=0.5, marker="s", tools=["hover"])
     plot = clase_0_train * clase_1_train * clase_0_test * clase_1_test
-    return plot.opts(width=550, height=450, title="Dataset de ejemplo", xlabel="Feature 1", ylabel="Feature 2",
-                    legend_position="top", xlim=(7.5, 12.3), ylim=(-1.5, 6))
+    plot = plot.opts(
+        width=550,
+        height=450,
+        title="Dataset de ejemplo",
+        xlabel="Feature 1",
+        ylabel="Feature 2",
+        legend_position="top",
+        xlim=(7.5, 12.3),
+        ylim=(-1.5, 6),
+    )
+    return plot
+
 
 class RegLog:
     """
@@ -228,13 +397,8 @@ class RegLog:
         gradient = np.dot(X.T, (self._prediction - self._y_train)) / self._y_train.size
         return gradient
 
-def safe_margin(val, low=True, pct: float=0.05):
-    low_pct, high_pct = 1 - pct, 1 + pct
-    func = min if low else max
-    return func(val * low_pct, val * high_pct)
-    
 
-def example_meshgrid(X, n_bins=10, low_th: float=0.95, high_th:float=1.05):
+def example_meshgrid(X, n_bins=100, low_th: float = 0.95, high_th: float = 1.05):
     low_x, high_x = X[:, 0].min(), X[:, 0].max()
     low_y, high_y = X[:, 1].min(), X[:, 1].max()
     low_x = safe_margin(low_x)
@@ -245,71 +409,75 @@ def example_meshgrid(X, n_bins=10, low_th: float=0.95, high_th:float=1.05):
     ys = np.linspace(low_y, high_y, n_bins)
     return np.meshgrid(xs, ys)
 
+
 def predict_grid(model, X):
     x_grid, y_grid = example_meshgrid(X)
     grid = np.c_[x_grid.ravel(), y_grid.ravel()]
     probs = model.predict_proba(grid)[:, 1].reshape(x_grid.shape)
     return probs, x_grid, y_grid
 
-def plot_interactive_image(grid):
-    img = hv.Image(grid)
-    # Declare pointer stream initializing at (0, 0) and linking to Image
-    pointer = streams.PointerXY(x=0, y=0, source=img)
-    # Define function to draw cross-hair and report value of image at location as text
-    def cross_hair_info(x, y):
-        text = hv.Text(x+0.05, y, '%.3f %.3f %.3f'% (x, y, img[x,y]), halign='left', valign='bottom')
-        return hv.HLine(y) * hv.VLine(x) * text
-    # Overlay image and cross_hair_info
-    return img * hv.DynamicMap(cross_hair_info, streams=[pointer])
 
 def plot_classes(model, X, y):
     try:
         probs = model.predict_proba(X)[:, 1]
     except:
         probs = model.predict_proba(X)
-    data = pd.DataFrame({"x": X[:, 0], "y": X[:, 1], "target": y, "porb": probs})
-    return hv.Scatter(data).opts(size=10, color="target", tools=["hover"], cmap="paired")
+    data = pd.DataFrame(
+        {"x": X[:, 0], "y": X[:, 1], "target": y, "prob": probs, "predicted": probs.round()}
+    )
+    return hv.Scatter(data).opts(size=10, color="target", tools=["hover"], cmap=["blue", "red"])
+
 
 def plot_boundary(model, min_x, max_x):
-    theta = np.concatenate([model.intercept_, model.coef_[0]])# getting the x co-ordinates of the decision boundary
+    theta = np.concatenate(
+        [model.intercept_, model.coef_[0]]
+    )  # getting the x co-ordinates of the decision boundary
     plot_x = np.array([min_x, max_x])
     # getting corresponding y co-ordinates of the decision boundary
-    plot_y = (-1/theta[2]) * (theta[1] * plot_x + theta[0]) # Plotting the Single Line Decision
+    plot_y = (-1 / theta[2]) * (theta[1] * plot_x + theta[0])  # Plotting the Single Line Decision
     # Boundary
     data = pd.DataFrame({"x": plot_x, "y": plot_y})
-    return hv.Curve(data)
+    return hv.Curve(data).opts(color="#cfcb02")
+
 
 def plot_probability_grid(model, X):
     probabilities, xs, ys = predict_grid(model, X)
     data = pd.DataFrame()
-    qmesh = hv.QuadMesh((xs, ys, probabilities)).opts(colorbar=True, width=500, height=400, cmap="YlGnBu")
+    qmesh = hv.QuadMesh((xs, ys, probabilities)).opts(
+        colorbar=True, width=500, height=400, cmap="YlGnBu"
+    )
     return qmesh
 
+
 def plot_model_output(model, X, y):
-    
-    #img = plot_interactive_image(probabilities)
+
+    # img = plot_interactive_image(probabilities)
     points = plot_classes(model, X, y)
-    boundary = plot_boundary(model, safe_margin(X[:, 0].min(), True, 0.075),
-                             safe_margin(X[:,0].max(), False, 0.075))
+    boundary = plot_boundary(
+        model, safe_margin(X[:, 0].min(), True, 0.075), safe_margin(X[:, 0].max(), False, 0.075)
+    )
     boundary = boundary.opts(line_width=5)
     qmesh = plot_probability_grid(model, X)
     return qmesh * points * boundary
 
 
 class RegLogTrainingPlotter:
-    loss_plot_columns = ['train_loss', 'test_loss']
+    loss_plot_columns = ["train_loss", "test_loss"]
 
     def __init__(self, reglog: RegLog, max_weights: int = 10, plot_every: int = 10):
         self.reglog = reglog
         self.max_weights = max_weights
         self.plot_every = plot_every
 
-        self._loss_df = pd.DataFrame({col: [] for col in self.loss_plot_columns},
-                                     columns=self.loss_plot_columns)
+        self._loss_df = pd.DataFrame(
+            {col: [] for col in self.loss_plot_columns}, columns=self.loss_plot_columns
+        )
         self._loss_register = StreamzDataFrame(example=self._loss_df)
 
-        self._df_weights = pd.DataFrame({"w_{}".format(i): [] for i in range(max_weights)},
-                                        columns=["w_{}".format(i) for i in range(max_weights)])
+        self._df_weights = pd.DataFrame(
+            {"w_{}".format(i): [] for i in range(max_weights)},
+            columns=["w_{}".format(i) for i in range(max_weights)],
+        )
         self._weights_register = StreamzDataFrame(example=self._df_weights)
         self.curr_iter = 0
         self.train_loss = None
@@ -336,17 +504,23 @@ class RegLogTrainingPlotter:
     def _record_loss(self):
         if self.curr_iter % self.plot_every == 0:
             loss_df = pd.DataFrame(
-                {'train_loss': [self.train_loss], 'test_loss': [self.test_loss]},
-                columns=['train_loss', 'test_loss'], index=[self.curr_iter])
+                {"train_loss": [self.train_loss], "test_loss": [self.test_loss]},
+                columns=["train_loss", "test_loss"],
+                index=[self.curr_iter],
+            )
             self._loss_register.emit(loss_df)
 
     def _record_weights(self):
         if self.curr_iter % self.plot_every == 0:
             n_weights = self.max_weights
-            df_w = pd.DataFrame({"w_{}".format(ix_w): [w] for ix_w, w in
-                                 enumerate(self.reglog.weights[:n_weights])},
-                                columns=["w_{}".format(ix) for ix in range(n_weights)],
-                                index=[self.curr_iter])
+            df_w = pd.DataFrame(
+                {
+                    "w_{}".format(ix_w): [w]
+                    for ix_w, w in enumerate(self.reglog.weights[:n_weights])
+                },
+                columns=["w_{}".format(ix) for ix in range(n_weights)],
+                index=[self.curr_iter],
+            )
             self._weights_register.emit(df_w)
 
     def create_plot(self):
@@ -358,20 +532,20 @@ class RegLogTrainingPlotter:
     def _create_loss_plot(self):
         n_iters = self.reglog.num_iters
         losses = self._loss_register.hvplot.line(ylim=(0, None))
-        losses = losses.opts(ylim=(0, None), xlim=(0, n_iters + int(n_iters / 20)),
-                             title="Loss", width=400)
+        losses = losses.opts(
+            ylim=(0, None), xlim=(0, n_iters + int(n_iters / 20)), title="Loss", width=400
+        )
         return losses
 
     def _create_weights_plot(self):
-        bars = self._weights_register.hvplot.bar(stacked=True,
-                                                 rot=75, shared_axes=False)
-        bars = bars.opts(width=400, title="Model Weights", xlabel='Training iteration',
-                         ylabel='Weight value')
+        bars = self._weights_register.hvplot.bar(stacked=True, rot=75, shared_axes=False)
+        bars = bars.opts(
+            width=400, title="Model Weights", xlabel="Training iteration", ylabel="Weight value"
+        )
         return bars
 
 
 class ModelPlotter:
-
     @staticmethod
     def plot_interactive_image(grid):
         img = hv.Image(grid)
@@ -380,16 +554,16 @@ class ModelPlotter:
         # Define function to draw cross-hair and report value of image at location as text
 
         def cross_hair_info(x, y):
-            text = hv.Text(x + 0.05, y, '%.3f %.3f %.3f' % (x, y, img[x, y]), halign='left',
-                           valign='bottom')
+            text = hv.Text(
+                x + 0.05, y, "%.3f %.3f %.3f" % (x, y, img[x, y]), halign="left", valign="bottom"
+            )
             return hv.HLine(y) * hv.VLine(x) * text
 
         # Overlay image and cross_hair_info
         return img * hv.DynamicMap(cross_hair_info, streams=[pointer])
 
     @staticmethod
-    def plot_dataset(X, y, model=None, dim_0: int = 0, dim_1: int = 1,
-                     cmap: str = "viridis"):
+    def plot_dataset(X, y, model=None, dim_0: int = 0, dim_1: int = 1, cmap: str = "viridis"):
         data = pd.DataFrame({"x": X[:, dim_0], "y": X[:, dim_1], "target": y})
         if model:
             probs = model.predict_proba(X)
@@ -400,21 +574,24 @@ class ModelPlotter:
         return hv.Scatter(data).opts(size=10, color="target", tools=["hover"], cmap=cmap)
 
     @classmethod
-    def plot_decision_boundaries(cls, model, X, class_names: str = None,
-                                 dim_x: int =0, dim_y: int=1):
+    def plot_decision_boundaries(
+        cls, model, X, class_names: str = None, dim_x: int = 0, dim_y: int = 1
+    ):
         """Plot the decission boundaries of a classification model."""
 
         min_x = cls.safe_bound(X[:, dim_x].min(), low=True, pct=0.075)
         max_x = cls.safe_bound(X[:, dim_y].max(), low=False, pct=0.075)
         plots = {}
-        for i, (intercept, coef) in enumerate(zip(model.intercept_.tolist(),
-                                                  model.coef_.tolist())):
+        for i, (intercept, coef) in enumerate(
+            zip(model.intercept_.tolist(), model.coef_.tolist())
+        ):
             # getting the x co-ordinates of the decision boundary
             theta = np.concatenate([[intercept], coef])
             plot_x = np.array([min_x, max_x])
             # getting corresponding y co-ordinates of the decision boundary
             plot_y = (-1 / coef[dim_y]) * (
-                    theta[dim_x] * plot_x + intercept)  # Plotting the Single Line Decision
+                theta[dim_x] * plot_x + intercept
+            )  # Plotting the Single Line Decision
             # Boundary
             data = pd.DataFrame({"x": plot_x, "y": plot_y})
             boundary = hv.Curve(data).opts(line_width=5)
@@ -436,7 +613,7 @@ class ModelPlotter:
         return qmesh * points * boundary
 
     @classmethod
-    def plot_classification(cls, model, X, y, dim_x: int=0, dim_y: int=1):
+    def plot_classification(cls, model, X, y, dim_x: int = 0, dim_y: int = 1):
         points = cls.plot_dataset(X, y, model=model)
         boundary = cls.plot_decision_boundaries(model, X, dim_x=dim_x, dim_y=dim_y)
         qmesh = cls.plot_regions(model, X)
