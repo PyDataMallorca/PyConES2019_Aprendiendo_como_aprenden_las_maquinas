@@ -127,7 +127,7 @@ def plot_classification_report(y, y_pred, **kwargs):
     return hv.Table(df).opts(title="Classification report")
 
 
-def plot_feature_importances(model, target_names=None, feature_names=None, stacked: bool = True):
+def plot_feature_importances(model, target_names=None, feature_names=None, stacked: bool = False):
     n_target, n_features = model.coef_.shape
     ix = feature_names if feature_names is not None else list(range(n_features))
     cols = (
@@ -182,8 +182,12 @@ def interactive_logistic_regression(
 ):
     X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, random_state=42)
 
-    def interactive_model(C, penalty):
-        model = LogisticRegression(C=C, penalty=penalty, solver="saga", random_state=42).fit(X, y)
+    def interactive_model(C, penalty, fit_intercept, intercept_scaling, l1_ratio, class_weight):
+        model = LogisticRegression(C=C, penalty=penalty, solver="saga",
+                                   fit_intercept=fit_intercept,
+                                   intercept_scaling=intercept_scaling,
+                                   l1_ratio=l1_ratio, class_weight=class_weight,
+                                   random_state=42).fit(X, y)
         return plot_model_evaluation(
             model,
             X_train,
@@ -199,7 +203,13 @@ def interactive_logistic_regression(
     penalty_tog = widgets.RadioButtonGroup(
         name="penalty", options=["none", "l1", "l2", "elasticnet"]
     )
-    return pn.interact(interactive_model, C=c_slider, penalty=penalty_tog)
+    fit_intercept = widgets.Toggle(name="fit_intercept")
+    intercept_scaling = widgets.LiteralInput(value=1, name="intercept_scaling")
+    l1_ratio = widgets.FloatSlider(end=1., start=0., value=0.5, name="l1_ratio")
+    class_weight = widgets.LiteralInput(value=None, name="class_weight")
+    return pn.interact(interactive_model, C=c_slider, penalty=penalty_tog,
+                       fit_intercept=fit_intercept, intercept_scaling=intercept_scaling,
+                       l1_ratio=l1_ratio, class_weight=class_weight)
 
 
 def plot_dataset_2d(X_train, y_train, X_test, y_test):
