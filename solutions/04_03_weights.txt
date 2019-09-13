@@ -1,0 +1,8 @@
+7. Se puede observar como las fronteras de separación de clases se expanden para aquellas clases con mayor peso.
+    Usando este parámetro podemos variar la confianza que nuestro modelo tiene al predecir cada una de
+    las diferentes clases.
+
+8. Pese a no cometer ningún error en el dataset de test, este modelo no seria adecuado, ya que las métricas
+    resultantes son producto del sobreentrenamiento. La irregularidad en las fronteras de decisión, 
+    y los multiples errores cometidos en el dataset de entrenamiento son indicadores de que el modelo ha sido 
+    sobreentrenado y no generalizará bien.

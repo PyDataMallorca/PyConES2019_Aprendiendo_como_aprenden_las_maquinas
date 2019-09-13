@@ -1,0 +1,9 @@
+Soluciones:
+
+1. Dos errores classificando iris versicolor como virginica.
+
+2. Setosa: Petal lenght | Virginica: Petal width | Versicolor: Petal width
+
+3. Se debe a que no existe una frontera clara de separación entre las clases versicolor y virginica.
+    Debido a que en ambas clases existen valores difíciles de distinguir, es posible que incurramos
+    en sobreentrenamiento. Para mitigar el sobreentrenamiento se aconseja usar alguna técnica de regularización.
