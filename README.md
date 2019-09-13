@@ -35,8 +35,6 @@ Una segunda forma sería instalando Miniconda. Lo podéis descargar [desde este 
 
 **Instalación de paquetes específicos**
 
-[PUEDES OMITIR ESTE PASO SI HAS INSTALADO ANACONDA. SI HAS INSTALADO MINICONDA CONTINUA LEYENDO]
-
 Para instalar el resto de paquetes necesarios podéis abrir una terminal (Linux/Mac) o el AnacondaPrompt (Windows), ejecutad lo siguiente (dependiendo del sistema operativo en el que estéis deberéis ejecutar unas cosas u otras).
 
 `cd ruta/a/la/carpeta/descargada/y/descomprimida` (Linux o Mac)
@@ -47,7 +45,7 @@ Para instalar el resto de paquetes necesarios podéis abrir una terminal (Linux/
 
 # Durante el taller
 
-Como en el paso anterior habéis instalado los paquetes necesarios, solamente tenéis que activar el entorno creado y usar los paquetes. Para ello, en la misma terminal que los pasos anteriores deberéis ejecutar **[si tienes Anaconda instalado te puedes saltar el anterior paso]**:
+Como en el paso anterior habéis instalado los paquetes necesarios, solamente tenéis que activar el entorno creado y usar los paquetes. Para ello, en la misma terminal que los pasos anteriores deberéis ejecutar:
 
 `source activate pycones19`
 
