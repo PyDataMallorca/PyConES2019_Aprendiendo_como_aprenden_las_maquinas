@@ -2,7 +2,7 @@
 
 [![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/PyDataMallorca/PyConES2019_Aprendiendo_como_aprenden_las_maquinas/master)
 
-Taller "Aprendiendo cómo aprenden las máquinas" preparado por los organizadores de [PyDataMallorca](https://twitter.com/PyDataMallorca) para la [PyConES2019](https://2019.es.pycon.org/).
+Taller "Aprendiendo cómo aprenden las máquinas" preparado por los organizadores de [PyData Mallorca](https://twitter.com/PyDataMallorca) para la [PyConES2019](https://2019.es.pycon.org/).
 
 # Preparación imprescindible antes del taller
 
