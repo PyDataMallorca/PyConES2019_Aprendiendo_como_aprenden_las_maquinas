@@ -2,11 +2,11 @@
 
 [![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/PyDataMallorca/PyConES2019_Aprendiendo_como_aprenden_las_maquinas/master)
 
-Taller "Aprendiendo cómo aprenden las máquinas" preparado por los organizadores de [PyDataMallorca](https://twitter.com/PyDataMallorca) para la [PyConES2019](https://2019.es.pycon.org/).
+Taller "Aprendiendo cómo aprenden las máquinas" preparado por los organizadores de [PyData Mallorca](https://twitter.com/PyDataMallorca) para la [PyConES2019](https://2019.es.pycon.org/).
 
 # Preparación imprescindible antes del taller
 
-**NOTA: es muy importante que acudas al taller con todo instalado, para que puedas aprovechar al máximo todo lo que explicaremos.**
+**NOTA: NO VAMOS A DEDICAR TIEMPO A LA INSTALACIÓN DURANTE EL TALLER, ASÍ QUE POR FAVOR: VEN CON TODO INSTALADO PREVIAMENTE.**
 
 Necesitarás lo siguiente:
 
@@ -53,14 +53,40 @@ Y finalmente también ejecutar jupyter notebook para acceder al tutorial. Atenci
 
 `jupyter notebook`
 
-# Resumen de la propuesta
+# Resumen del taller
 
-Taller de 3 horas destinado a comprender el funcionamiento de los algoritmos más importantes en Data Science, mediante una explicación muy simple diseñada para todos los públicos y con ejercicios prácticos en Python, impartido por el equipo organizador de PyData Mallorca. En este taller veremos cuándo debemos aplicar y cómo funcionan las regresiones lineales, las regresiones logísticas y los árboles de decisión sin entrar en detalles matemáticos ni estadísticos complejos, pero permitiendo que el alumnado desarrolle una intuición clara sobre cómo funcionan estos algoritmos internamente y así poderlos aplicar a otras situaciones después del taller con facilidad. Para la explicación y parte práctica, utilizaremos las siguientes herramientas y librerías:
+Taller de 2 horas y 20 minutos destinado a comprender el funcionamiento de los algoritmos más importantes en Data Science, mediante una explicación muy simple diseñada para todos los públicos y con ejercicios prácticos en Python, impartido por el equipo organizador de PyData Mallorca. En este taller veremos cuándo debemos aplicar y cómo funcionan las regresiones lineales, las regresiones logísticas y los árboles de decisión sin entrar en detalles matemáticos ni estadísticos complejos, pero permitiendo que el alumnado desarrolle una intuición clara sobre cómo funcionan estos algoritmos internamente y así poderlos aplicar a otras situaciones después del taller con facilidad. Para la explicación y parte práctica, utilizaremos las siguientes herramientas y librerías:
 
 * **Jupyter** para la edición de código Python y texto enriquecido, 
 * **Pandas** para la carga y transformación de los datos que utilizaremos en los algoritmos, 
 * **matplotlib** para la visualización de los datos y 
 * **scikit-learn** para la ejecución, parametrización y comprobación de los algoritmos.
+
+# Descripción completa del taller
+
+Este taller está diseñado para cualquier persona sin experiencia en análisis científico de datos, que pretenda comprender cómo funcionan los algoritmos más importantes en ciencia de datos.
+
+El único requisito para apuntarse al taller es tener conocimientos básicos de programación, aunque no hace falta que sean en Python. Además, como explicaremos todos los algoritmos de una forma muy sencilla y visual, no es necesario tener conocimientos avanzados en estadística.
+
+Simplemente, debes tener en cuenta que tendrás que traer un portátil con Anaconda con Python 3.7 instalado para poder seguir el taller y realizar los ejercicios que te propondremos.
+
+Respecto a la estructura del taller, para empezar realizaremos una breve introducción a Jupyter. Jupyter es una aplicación que permite editar código Python, así como también otros lenguajes como R, Julia o Scala, de forma conjunta con texto enriquecido y que es ampliamente utilizado en el análisis de datos actualmente.
+
+Después, para cada uno de los algoritmos que veremos, realizaremos los siguientes pasos:
+
+1. Primero, explicaremos cuáles son los objetivos del algoritmo y para qué podemos utilizarlo.
+1. Posteriormente, analizaremos visualmente y de forma muy fácil de seguir qué hace realmente el algoritmo. De esta forma, desarrollarás una intuición muy práctica para poder aplicar el algoritmo en otras situaciones, sin necesidad de conocer la parte matemática interna.
+1. Después, ejecutaremos código en Python en el que habremos preparado una ejecución del algoritmo, sobre un conjunto de datos previamente seleccionado. Así, podrás ver rápidamente cómo se ejecuta el algoritmo y cuáles son los resultados.
+1. Finalmente, te propondremos una serie de ejercicios sencillos en código Python para que puedas comprender mejor qué hace el algoritmo y reconocer qué ventajas y desventajas podemos encontrarnos a la hora de aplicarlo.
+
+Como somos diferentes personas que vamos a impartir el taller, en todo momento tendrás a tu disposición alguna persona que podrá ayudarte si te quedas atrapado en algún ejercicio o si tienes alguna duda particular, ¡el tiempo en el taller te a va cundir muchísimo!
+
+Los algoritmos que vamos a presentarte son los siguientes:
+* Regresiones lineales.
+* Regresiones logísticas.
+* Y árboles de decisión.
+
+Finalmente, indicar que las herramientas que utilizaremos en este taller serán las siguientes: Jupyter, Pandas, matplotlib y scikit-learn.
 
 # Autores (por orden alfabético inverso)
 
