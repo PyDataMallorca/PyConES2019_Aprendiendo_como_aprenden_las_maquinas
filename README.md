@@ -6,7 +6,7 @@ Taller "Aprendiendo cómo aprenden las máquinas" preparado por los organizadore
 
 # Preparación imprescindible antes del taller
 
-**NOTA: es muy importante que acudas al taller con todo instalado, para que puedas aprovechar al máximo todo lo que explicaremos.**
+**NOTA: es muy importante que acudas al taller con todo instalado, para que puedas aprovechar al máximo todo lo que explicaremos. NO VAMOS A DEDICAR TIEMPO A LA INSTALACIÓN DURANTE EL TALLER, POR FAVOR, VEN CON TODO INSTALADO.**
 
 Necesitarás lo siguiente:
 
