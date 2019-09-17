@@ -18,6 +18,7 @@ from sklearn.neighbors.classification import KNeighborsClassifier
 from sklearn.manifold.t_sne import TSNE
 from panel import widgets
 import panel as pn
+from umap import UMAP
 
 
 def safe_margin(val, low=True, pct: float = 0.05):
@@ -85,8 +86,9 @@ def plot_confussion_matrix(
     return labeled.options(xlabel=pred_label_name, ylabel=true_label_name, invert_yaxis=True)
 
 
-def plot_decision_boundaries(X, y, y_pred, resolution: int = 100):
-    embedding = TSNE(n_components=2, random_state=160290).fit_transform(X)
+def __plot_decision_boundaries(X, y, y_pred, resolution: int = 100, embedding=None):
+    if embedding is None:
+        embedding = TSNE(n_components=2, random_state=160290).fit_transform(X)
 
     x_min, x_max = safe_bounds(embedding[:, 0])
     y_min, y_max = safe_bounds(embedding[:, 1])
@@ -111,11 +113,63 @@ def plot_decision_boundaries(X, y, y_pred, resolution: int = 100):
     ).opts(color="red", size=5, alpha=0.9)
 
     points = points.opts(
-        color="pred", cmap="viridis", line_color="black", size=10, alpha=0.8, tools=["hover"]
+        color="pred", cmap="viridis", line_color="grey", size=10, alpha=0.8, tools=["hover"]
     )
     plot = mesh * points * failed_points
     plot = plot.opts(
         xaxis=None, yaxis=None, width=500, height=450, title="Decision boundaries on TSNE"
+    )
+    return plot
+
+
+def plot_decision_boundaries(X_train, y_train, y_pred_train, X_test, y_test, y_pred_test,
+                             resolution: int = 100, embedding=None):
+    X = np.concatenate([X_train, X_test])
+    y = np.concatenate([y_train, y_test])
+    y_pred = np.concatenate([y_pred_train, y_pred_test])
+
+    if embedding is None:
+        embedding = UMAP(n_components=2, random_state=160290).fit_transform(X)
+
+    x_min, x_max = safe_bounds(embedding[:, 0])
+    y_min, y_max = safe_bounds(embedding[:, 1])
+    xx, yy = np.meshgrid(
+        np.linspace(x_min, x_max, resolution), np.linspace(y_min, y_max, resolution)
+    )
+
+    # approximate Voronoi tesselation on resolution x resolution grid using 1-NN
+    background_model = KNeighborsClassifier(n_neighbors=1).fit(embedding, y_pred)
+    voronoi_bg = background_model.predict(np.c_[xx.ravel(), yy.ravel()])
+    voronoi_bg = voronoi_bg.reshape((resolution, resolution))
+
+    mesh = hv.QuadMesh((xx, yy, voronoi_bg)).opts(cmap="viridis", alpha=0.6)
+    points_train = hv.Scatter(
+        {"x": embedding[:len(y_train), 0], "y": embedding[:len(y_train), 1], "pred": y_pred_train,
+         "class": y_train},
+        kdims=["x", "y"],
+        vdims=["pred", "class"],
+    )
+    points_test = hv.Scatter(
+        {"x": embedding[len(y_train):, 0], "y": embedding[len(y_train):, 1], "pred": y_pred_test,
+         "class": y_test},
+        kdims=["x", "y"],
+        vdims=["pred", "class"],
+    )
+    errors = y_pred != y
+    failed_points = hv.Scatter(
+        {"x": embedding[errors, 0], "y": embedding[errors, 1]}, kdims=["x", "y"]
+    ).opts(color="red", size=2, alpha=0.9)
+
+    points_train = points_train.opts(
+        color="class", cmap="viridis", line_color="grey", size=10, alpha=0.8, tools=["hover"]
+    )
+    points_test = points_test.opts(
+        color="class", cmap="viridis", line_color="grey", size=10, alpha=0.8, tools=["hover"],
+        marker="square"
+    )
+    plot = mesh * points_train * points_test * failed_points
+    plot = plot.opts(
+        xaxis=None, yaxis=None, width=500, height=450, title="Fronteras de decisión"
     )
     return plot
 
@@ -154,26 +208,29 @@ def plot_model_evaluation(
     normalize: bool = False,
     resolution: int = 100,
     stacked: bool = False,
+    embedding: np.ndarray=None,
 ):
     y_pred_test = model.predict(X_test)
-    X, y = np.concatenate([X_train, X_test]), np.concatenate([y_train, y_test])
-    y_pred_total = model.predict(X)
     metrics = plot_classification_report(y=y_test, y_pred=y_pred_test, target_names=target_names)
     conf_mat = plot_confussion_matrix(
         y_test=y_test, y_pred=y_pred_test, target_names=target_names, normalize=normalize
     )
-    bounds = plot_decision_boundaries(X=X, y=y, y_pred=y_pred_total, resolution=resolution)
-    features = plot_feature_importances(
-        model=model, target_names=target_names, feature_names=feature_names, stacked=stacked
-    )
+    bounds = plot_decision_boundaries(X_train=X_train, y_train=y_train,
+                                      y_pred_train=model.predict(X_train),
+                                      X_test=X_test, y_test=y_test,
+                                      y_pred_test=model.predict(X_test), resolution=resolution,
+                                      embedding=embedding)
+    # features = plot_feature_importances(
+    #     model=model, target_names=target_names, feature_names=feature_names, stacked=stacked
+    # )
     gspec = pn.GridSpec(
-        min_height=1000, height=1000, max_height=1200, min_width=800, max_width=1980, width=800
+        min_height=700, height=700, max_height=1200, min_width=750, max_width=1980, width=750
     )
-    gspec[1:3, 0:2] = bounds
-    gspec[0, 2:4] = metrics
-    gspec[0, 0:2] = pn.pane.HTML(str(model), margin=0)
-    gspec[1:3, 2:4] = conf_mat
-    gspec[3:5, :] = features
+    gspec[0, 0] = bounds
+    gspec[1, 1] = metrics
+    gspec[1, 0] = pn.pane.HTML(str(model), margin=0)
+    gspec[0, 1] = conf_mat
+    # gspec[3:5, :] = features
     return gspec
 
 
@@ -181,6 +238,8 @@ def interactive_logistic_regression(
     X, y, target_names=None, feature_names=None, stacked: bool = False
 ):
     X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, random_state=42)
+    embedding = UMAP(n_components=2, random_state=160290).fit_transform(np.concatenate([X_train,
+                                                                                        X_test]))
 
     def interactive_model(C, penalty, fit_intercept, intercept_scaling, l1_ratio, class_weight):
         model = LogisticRegression(C=C, penalty=penalty, solver="saga",
@@ -197,6 +256,7 @@ def interactive_logistic_regression(
             target_names=target_names,
             feature_names=feature_names,
             stacked=stacked,
+            embedding=embedding
         )
 
     c_slider = widgets.LiteralInput(value=1, name="C")
