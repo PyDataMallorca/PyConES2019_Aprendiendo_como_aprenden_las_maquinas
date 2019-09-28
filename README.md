@@ -6,7 +6,7 @@ Taller "Aprendiendo cómo aprenden las máquinas" preparado por los organizadore
 
 # Preparación imprescindible antes del taller
 
-**NOTA: NO VAMOS A DEDICAR TIEMPO A LA INSTALACIÓN DURANTE EL TALLER, ASÍ QUE POR FAVOR: VEN CON TODO INSTALADO PREVIAMENTE.**
+**NOTA. NO VAMOS A DEDICAR TIEMPO A LA INSTALACIÓN DURANTE EL TALLER, ASÍ QUE POR FAVOR: VEN CON TODO INSTALADO PREVIAMENTE.**
 
 Necesitarás lo siguiente:
 
