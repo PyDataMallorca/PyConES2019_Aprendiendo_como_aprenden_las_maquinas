@@ -57,7 +57,7 @@ Y finalmente también ejecutar jupyter notebook para acceder al tutorial. Atenci
 
 Taller de 2 horas y 20 minutos destinado a comprender el funcionamiento de los algoritmos más importantes en Data Science, mediante una explicación muy simple diseñada para todos los públicos y con ejercicios prácticos en Python, impartido por el equipo organizador de PyData Mallorca. En este taller veremos cuándo debemos aplicar y cómo funcionan las regresiones lineales, las regresiones logísticas y los árboles de decisión sin entrar en detalles matemáticos ni estadísticos complejos, pero permitiendo que el alumnado desarrolle una intuición clara sobre cómo funcionan estos algoritmos internamente y así poderlos aplicar a otras situaciones después del taller con facilidad. Para la explicación y parte práctica, utilizaremos las siguientes herramientas y librerías:
 
-* **Jupyter** para la edición de código Python y texto enriquecido, 
+* **Jupyter** para la edición de código Python y texto enriquecido (lo veremos muy brevemente, si ves [este vídeo](https://www.youtube.com/watch?v=H6dLGQw9yFQ) previamente mucho mejor), 
 * **Pandas** para la carga y transformación de los datos que utilizaremos en los algoritmos, 
 * **matplotlib** para la visualización de los datos y 
 * **scikit-learn** para la ejecución, parametrización y comprobación de los algoritmos.
