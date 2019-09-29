@@ -1,0 +1,4 @@
+y_b_pred_train = model_b.predict(X_train)
+y_b_pred_test = model_b.predict(X_test)
+plot_train_b, plot_test_b = matrices_de_confusion(y_train, y_b_pred_train, y_test, y_b_pred_test)
+plot_train_b + plot_classification_report(y=y_train, y_pred=y_b_pred_train, target_names=iris.target_names)

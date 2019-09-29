@@ -1,0 +1,1 @@
+plot_test_b + plot_classification_report(y=y_test, y_pred=y_b_pred_test, target_names=iris.target_names)

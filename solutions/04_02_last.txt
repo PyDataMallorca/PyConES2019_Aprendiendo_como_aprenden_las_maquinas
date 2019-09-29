@@ -1,0 +1,6 @@
+3. Ambos modelos tienen muy buena pinta, pero el modeo B comete una tasa de error menos al clasificar las
+   Iris versicolor. El modelo A clasifica 3 iris Virginica como Iris versicolor, mientras que el modelo B falla
+   clasificando 1 virginica como versicolor, y dos versicolor como virginica.
+
+4. Dado que nuestro objetivo es cometer el menor numero de errores posible al clasificar Iris versicolor, 
+   el modelo B es el más indicado.
