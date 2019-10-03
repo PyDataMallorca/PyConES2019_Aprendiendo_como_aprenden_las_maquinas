@@ -7,18 +7,21 @@ from sklearn.metrics import confusion_matrix, classification_report
 import numpy as np
 import pandas as pd
 import holoviews as hv
-import hvplot.streamz
-import hvplot
-import hvplot.pandas
-from holoviews import streams
-import streamz
-from streamz.dataframe import DataFrame as StreamzDataFrame
+#import hvplot.streamz
+#import hvplot
+#import hvplot.pandas
+#from holoviews import streams
+#import streamz
+#from streamz.dataframe import DataFrame as StreamzDataFrame
 from bokeh.models import HoverTool
 from sklearn.neighbors.classification import KNeighborsClassifier
 from sklearn.manifold.t_sne import TSNE
-from panel import widgets
-import panel as pn
-from umap import UMAP
+#from panel import widgets
+#import panel as pn
+try:
+    from umap import UMAP
+except:
+    from umap.umap_ import UMAP
 
 
 def safe_margin(val, low=True, pct: float = 0.05):

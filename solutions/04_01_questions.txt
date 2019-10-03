@@ -1,0 +1,7 @@
+
+1. Comete 3 errores,clasificando iris virgnica como versicolor.
+2. Comete 4 errore del mismo tipo (Iris virginica clasificada como versicolor)
+3. En el dataset de test el recall y la f1 score para las clases versicolor y virginica es algo menor.
+4. Se puede observar que pese a tener peores resultados en el dataset de test, el tipo de error cometido es
+el mismo, lo que indica que lo aprendido en el dataset de entrenamiento, puede generalizar en el dataset
+de test
