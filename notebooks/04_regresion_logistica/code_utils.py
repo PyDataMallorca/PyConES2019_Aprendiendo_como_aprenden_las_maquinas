@@ -18,10 +18,9 @@ from sklearn.neighbors.classification import KNeighborsClassifier
 from sklearn.manifold.t_sne import TSNE
 #from panel import widgets
 #import panel as pn
-try:
-    from umap import UMAP
-except:
-    from umap.umap_ import UMAP
+
+import umap
+
 
 
 def safe_margin(val, low=True, pct: float = 0.05):
@@ -132,8 +131,11 @@ def plot_decision_boundaries(X_train, y_train, y_pred_train, X_test, y_test, y_p
     y_pred = np.concatenate([y_pred_train, y_pred_test])
 
     if embedding is None:
-        embedding = UMAP(n_components=2, random_state=160290).fit_transform(X)
-
+        try:
+            embedding = umap.UMAP(n_components=2, random_state=160290).fit_transform(X)
+        except:
+            from sklearn.manifold import TSNE
+            embedding = TSNE(n_components=2, random_state=160290).fit_transform(X)
     x_min, x_max = safe_bounds(embedding[:, 0])
     y_min, y_max = safe_bounds(embedding[:, 1])
     xx, yy = np.meshgrid(
@@ -241,7 +243,7 @@ def interactive_logistic_regression(
     X, y, target_names=None, feature_names=None, stacked: bool = False
 ):
     X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, random_state=42)
-    embedding = UMAP(n_components=2, random_state=160290).fit_transform(np.concatenate([X_train,
+    embedding = umap.UMAP(n_components=2, random_state=160290).fit_transform(np.concatenate([X_train,
                                                                                         X_test]))
 
     def interactive_model(C, penalty, fit_intercept, intercept_scaling, l1_ratio, class_weight):
