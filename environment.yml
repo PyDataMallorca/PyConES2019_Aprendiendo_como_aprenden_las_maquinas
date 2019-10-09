@@ -18,4 +18,4 @@ dependencies:
   - pip:
     - mglearn
     - streamz
-    - umap
+    - umap-learn
