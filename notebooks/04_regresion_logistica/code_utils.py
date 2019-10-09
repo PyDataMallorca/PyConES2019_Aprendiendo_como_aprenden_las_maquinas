@@ -4,22 +4,23 @@ warnings.filterwarnings("ignore")
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import confusion_matrix, classification_report
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import holoviews as hv
-#import hvplot.streamz
-#import hvplot
-#import hvplot.pandas
-#from holoviews import streams
-#import streamz
-#from streamz.dataframe import DataFrame as StreamzDataFrame
 from bokeh.models import HoverTool
 from sklearn.neighbors.classification import KNeighborsClassifier
 from sklearn.manifold.t_sne import TSNE
-#from panel import widgets
-#import panel as pn
-
 import umap
+try:
+    import holoviews as hv
+    import hvplot.streamz
+    import hvplot
+    import hvplot.pandas
+    from holoviews import streams
+    import streamz
+    from streamz.dataframe import DataFrame as StreamzDataFrame
+except:
+    pass
 
 
 
@@ -124,8 +125,16 @@ def __plot_decision_boundaries(X, y, y_pred, resolution: int = 100, embedding=No
     return plot
 
 
-def plot_decision_boundaries(X_train, y_train, y_pred_train, X_test, y_test, y_pred_test,
-                             resolution: int = 100, embedding=None):
+def plot_decision_boundaries(
+    X_train,
+    y_train,
+    y_pred_train,
+    X_test,
+    y_test,
+    y_pred_test,
+    resolution: int = 100,
+    embedding=None,
+):
     X = np.concatenate([X_train, X_test])
     y = np.concatenate([y_train, y_test])
     y_pred = np.concatenate([y_pred_train, y_pred_test])
@@ -135,6 +144,7 @@ def plot_decision_boundaries(X_train, y_train, y_pred_train, X_test, y_test, y_p
             embedding = umap.UMAP(n_components=2, random_state=160290).fit_transform(X)
         except:
             from sklearn.manifold import TSNE
+
             embedding = TSNE(n_components=2, random_state=160290).fit_transform(X)
     x_min, x_max = safe_bounds(embedding[:, 0])
     y_min, y_max = safe_bounds(embedding[:, 1])
@@ -149,14 +159,22 @@ def plot_decision_boundaries(X_train, y_train, y_pred_train, X_test, y_test, y_p
 
     mesh = hv.QuadMesh((xx, yy, voronoi_bg)).opts(cmap="viridis", alpha=0.6)
     points_train = hv.Scatter(
-        {"x": embedding[:len(y_train), 0], "y": embedding[:len(y_train), 1], "pred": y_pred_train,
-         "class": y_train},
+        {
+            "x": embedding[: len(y_train), 0],
+            "y": embedding[: len(y_train), 1],
+            "pred": y_pred_train,
+            "class": y_train,
+        },
         kdims=["x", "y"],
         vdims=["pred", "class"],
     )
     points_test = hv.Scatter(
-        {"x": embedding[len(y_train):, 0], "y": embedding[len(y_train):, 1], "pred": y_pred_test,
-         "class": y_test},
+        {
+            "x": embedding[len(y_train) :, 0],
+            "y": embedding[len(y_train) :, 1],
+            "pred": y_pred_test,
+            "class": y_test,
+        },
         kdims=["x", "y"],
         vdims=["pred", "class"],
     )
@@ -169,13 +187,16 @@ def plot_decision_boundaries(X_train, y_train, y_pred_train, X_test, y_test, y_p
         color="class", cmap="viridis", line_color="grey", size=10, alpha=0.8, tools=["hover"]
     )
     points_test = points_test.opts(
-        color="class", cmap="viridis", line_color="grey", size=10, alpha=0.8, tools=["hover"],
-        marker="square"
+        color="class",
+        cmap="viridis",
+        line_color="grey",
+        size=10,
+        alpha=0.8,
+        tools=["hover"],
+        marker="square",
     )
     plot = mesh * points_train * points_test * failed_points
-    plot = plot.opts(
-        xaxis=None, yaxis=None, width=500, height=450, title="Fronteras de decisión"
-    )
+    plot = plot.opts(xaxis=None, yaxis=None, width=500, height=450, title="Fronteras de decisión")
     return plot
 
 
@@ -213,18 +234,25 @@ def plot_model_evaluation(
     normalize: bool = False,
     resolution: int = 100,
     stacked: bool = False,
-    embedding: np.ndarray=None,
+    embedding: np.ndarray = None,
 ):
+    import panel as pn
+
     y_pred_test = model.predict(X_test)
     metrics = plot_classification_report(y=y_test, y_pred=y_pred_test, target_names=target_names)
     conf_mat = plot_confussion_matrix(
         y_test=y_test, y_pred=y_pred_test, target_names=target_names, normalize=normalize
     )
-    bounds = plot_decision_boundaries(X_train=X_train, y_train=y_train,
-                                      y_pred_train=model.predict(X_train),
-                                      X_test=X_test, y_test=y_test,
-                                      y_pred_test=model.predict(X_test), resolution=resolution,
-                                      embedding=embedding)
+    bounds = plot_decision_boundaries(
+        X_train=X_train,
+        y_train=y_train,
+        y_pred_train=model.predict(X_train),
+        X_test=X_test,
+        y_test=y_test,
+        y_pred_test=model.predict(X_test),
+        resolution=resolution,
+        embedding=embedding,
+    )
     # features = plot_feature_importances(
     #     model=model, target_names=target_names, feature_names=feature_names, stacked=stacked
     # )
@@ -242,16 +270,25 @@ def plot_model_evaluation(
 def interactive_logistic_regression(
     X, y, target_names=None, feature_names=None, stacked: bool = False
 ):
+    from panel import widgets
+    import panel as pn
+
     X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, random_state=42)
-    embedding = umap.UMAP(n_components=2, random_state=160290).fit_transform(np.concatenate([X_train,
-                                                                                        X_test]))
+    embedding = umap.UMAP(n_components=2, random_state=160290).fit_transform(
+        np.concatenate([X_train, X_test])
+    )
 
     def interactive_model(C, penalty, fit_intercept, intercept_scaling, l1_ratio, class_weight):
-        model = LogisticRegression(C=C, penalty=penalty, solver="saga",
-                                   fit_intercept=fit_intercept,
-                                   intercept_scaling=intercept_scaling,
-                                   l1_ratio=l1_ratio, class_weight=class_weight,
-                                   random_state=42).fit(X, y)
+        model = LogisticRegression(
+            C=C,
+            penalty=penalty,
+            solver="saga",
+            fit_intercept=fit_intercept,
+            intercept_scaling=intercept_scaling,
+            l1_ratio=l1_ratio,
+            class_weight=class_weight,
+            random_state=42,
+        ).fit(X, y)
         return plot_model_evaluation(
             model,
             X_train,
@@ -261,7 +298,7 @@ def interactive_logistic_regression(
             target_names=target_names,
             feature_names=feature_names,
             stacked=stacked,
-            embedding=embedding
+            embedding=embedding,
         )
 
     c_slider = widgets.LiteralInput(value=1, name="C")
@@ -270,11 +307,17 @@ def interactive_logistic_regression(
     )
     fit_intercept = widgets.Toggle(name="fit_intercept")
     intercept_scaling = widgets.LiteralInput(value=1, name="intercept_scaling")
-    l1_ratio = widgets.FloatSlider(end=1., start=0., value=0.5, name="l1_ratio")
+    l1_ratio = widgets.FloatSlider(end=1.0, start=0.0, value=0.5, name="l1_ratio")
     class_weight = widgets.LiteralInput(value=None, name="class_weight")
-    return pn.interact(interactive_model, C=c_slider, penalty=penalty_tog,
-                       fit_intercept=fit_intercept, intercept_scaling=intercept_scaling,
-                       l1_ratio=l1_ratio, class_weight=class_weight)
+    return pn.interact(
+        interactive_model,
+        C=c_slider,
+        penalty=penalty_tog,
+        fit_intercept=fit_intercept,
+        intercept_scaling=intercept_scaling,
+        l1_ratio=l1_ratio,
+        class_weight=class_weight,
+    )
 
 
 def plot_dataset_2d(X_train, y_train, X_test, y_test):
@@ -305,6 +348,39 @@ def plot_dataset_2d(X_train, y_train, X_test, y_test):
         ylim=(-1.5, 6),
     )
     return plot
+
+
+def plot_dataset_2d_mpl(X_train, y_train, X_test, y_test):
+    s = 400
+    plt.figure(figsize=(10, 5))
+    idx = y_train == 0
+    idx_test = y_test == 0
+    plt.scatter(X_train[idx, 0], X_train[idx, 1], label="Clase 0 train", color="b", s=s, alpha=0.5)
+    plt.scatter(
+        X_train[~idx, 0], X_train[~idx, 1], label="Clase 1 train", color="r", s=s, alpha=0.5
+    )
+    plt.scatter(
+        X_test[idx_test, 0],
+        X_test[idx_test, 1],
+        label="Clase 0 test",
+        color="b",
+        s=s,
+        alpha=0.5,
+        marker="s",
+    )
+    plt.scatter(
+        X_test[~idx_test, 0],
+        X_test[~idx_test, 1],
+        label="Clase 1 test",
+        color="r",
+        s=s,
+        alpha=0.5,
+        marker="s",
+    )
+    plt.title("Dataset de ejemplo")
+    plt.xlim((7.5, 12.3))
+    plt.ylim((-1.5, 6))
+    plt.legend(loc="best", labelspacing=1)
 
 
 class RegLog:
@@ -524,6 +600,31 @@ def plot_model_output(model, X, y):
     boundary = boundary.opts(line_width=5)
     qmesh = plot_probability_grid(model, X)
     return qmesh * points * boundary
+
+
+def plot_classes_mpl(model, X, y):
+    try:
+        probs = model.predict_proba(X)[:, 1]
+    except:
+        probs = model.predict_proba(X)
+    data = pd.DataFrame(
+        {"x": X[:, 0], "y": X[:, 1], "target": y, "prob": probs}
+    )
+    return data.plot.scatter(x="x", y="y", c="target",
+                             cmap=plt.cm.bwr, s=100, colorbar=False)
+
+
+def plot_boundary_mpl(model, min_x, max_x):
+    theta = np.concatenate(
+        [model.intercept_ if isinstance(model.intercept_, np.ndarray) else [model.intercept_],
+         model.coef_[0]]
+    )  # getting the x co-ordinates of the decision boundary
+    plot_x = np.array([min_x, max_x])
+    # getting corresponding y co-ordinates of the decision boundary
+    plot_y = (-1 / theta[2]) * (theta[1] * plot_x + theta[0])  # Plotting the Single Line Decision
+    # Boundary
+    data = pd.DataFrame({"x": plot_x, "y": plot_y})
+    return data.plot(color="#cfcb02", x="x", y="y")#hv.Curve(data).opts(color="#cfcb02")
 
 
 class RegLogTrainingPlotter:
