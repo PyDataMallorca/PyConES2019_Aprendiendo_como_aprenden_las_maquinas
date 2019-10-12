@@ -1,0 +1,3 @@
+print(classification_report(y_test, y_pred=y_a_pred_test, target_names=iris.target_names))
+_  = plot_confusion_matrix(y_a_pred_test, y_test, target_names=iris.target_names,
+                           title="Modelo A dataset de test", figsize=(6,6))

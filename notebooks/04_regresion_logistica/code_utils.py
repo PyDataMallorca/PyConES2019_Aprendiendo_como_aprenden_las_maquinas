@@ -4,7 +4,7 @@ warnings.filterwarnings("ignore")
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import confusion_matrix, classification_report
-import matplotlib.pyplot as plt
+
 import numpy as np
 import pandas as pd
 from bokeh.models import HoverTool
@@ -22,20 +22,7 @@ try:
 except:
     pass
 
-
-
-def safe_margin(val, low=True, pct: float = 0.05):
-    low_pct, high_pct = 1 - pct, 1 + pct
-    func = min if low else max
-    return func(val * low_pct, val * high_pct)
-
-
-def safe_bounds(array, pct: float = 0.05):
-    low_x, high_x = array.min(), array.max()
-    low_x = safe_margin(low_x, pct=pct)
-    high_x = safe_margin(high_x, pct=pct, low=False)
-    return low_x, high_x
-
+from mpl_plots import predict_grid, safe_margin, safe_bounds
 
 def plot_confussion_matrix(
     y_test,
@@ -350,39 +337,6 @@ def plot_dataset_2d(X_train, y_train, X_test, y_test):
     return plot
 
 
-def plot_dataset_2d_mpl(X_train, y_train, X_test, y_test):
-    s = 400
-    plt.figure(figsize=(10, 5))
-    idx = y_train == 0
-    idx_test = y_test == 0
-    plt.scatter(X_train[idx, 0], X_train[idx, 1], label="Clase 0 train", color="b", s=s, alpha=0.5)
-    plt.scatter(
-        X_train[~idx, 0], X_train[~idx, 1], label="Clase 1 train", color="r", s=s, alpha=0.5
-    )
-    plt.scatter(
-        X_test[idx_test, 0],
-        X_test[idx_test, 1],
-        label="Clase 0 test",
-        color="b",
-        s=s,
-        alpha=0.5,
-        marker="s",
-    )
-    plt.scatter(
-        X_test[~idx_test, 0],
-        X_test[~idx_test, 1],
-        label="Clase 1 test",
-        color="r",
-        s=s,
-        alpha=0.5,
-        marker="s",
-    )
-    plt.title("Dataset de ejemplo")
-    plt.xlim((7.5, 12.3))
-    plt.ylim((-1.5, 6))
-    plt.legend(loc="best", labelspacing=1)
-
-
 class RegLog:
     """
     Modelo de regresión logistica.
@@ -539,24 +493,6 @@ class RegLog:
         return gradient
 
 
-def example_meshgrid(X, n_bins=100, low_th: float = 0.95, high_th: float = 1.05):
-    low_x, high_x = X[:, 0].min(), X[:, 0].max()
-    low_y, high_y = X[:, 1].min(), X[:, 1].max()
-    low_x = safe_margin(low_x)
-    low_y = safe_margin(low_y)
-    high_x = safe_margin(high_x, False)
-    high_y = safe_margin(high_y, False)
-    xs = np.linspace(low_x, high_x, n_bins)
-    ys = np.linspace(low_y, high_y, n_bins)
-    return np.meshgrid(xs, ys)
-
-
-def predict_grid(model, X):
-    x_grid, y_grid = example_meshgrid(X)
-    grid = np.c_[x_grid.ravel(), y_grid.ravel()]
-    probs = model.predict_proba(grid)[:, 1].reshape(x_grid.shape)
-    return probs, x_grid, y_grid
-
 
 def plot_classes(model, X, y):
     try:
@@ -602,29 +538,7 @@ def plot_model_output(model, X, y):
     return qmesh * points * boundary
 
 
-def plot_classes_mpl(model, X, y):
-    try:
-        probs = model.predict_proba(X)[:, 1]
-    except:
-        probs = model.predict_proba(X)
-    data = pd.DataFrame(
-        {"x": X[:, 0], "y": X[:, 1], "target": y, "prob": probs}
-    )
-    return data.plot.scatter(x="x", y="y", c="target",
-                             cmap=plt.cm.bwr, s=100, colorbar=False)
 
-
-def plot_boundary_mpl(model, min_x, max_x):
-    theta = np.concatenate(
-        [model.intercept_ if isinstance(model.intercept_, np.ndarray) else [model.intercept_],
-         model.coef_[0]]
-    )  # getting the x co-ordinates of the decision boundary
-    plot_x = np.array([min_x, max_x])
-    # getting corresponding y co-ordinates of the decision boundary
-    plot_y = (-1 / theta[2]) * (theta[1] * plot_x + theta[0])  # Plotting the Single Line Decision
-    # Boundary
-    data = pd.DataFrame({"x": plot_x, "y": plot_y})
-    return data.plot(color="#cfcb02", x="x", y="y")#hv.Curve(data).opts(color="#cfcb02")
 
 
 class RegLogTrainingPlotter:

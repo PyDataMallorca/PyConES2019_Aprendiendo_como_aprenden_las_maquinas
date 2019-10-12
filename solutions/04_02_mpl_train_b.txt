@@ -1,0 +1,5 @@
+y_b_pred_train = model_b.predict(X_train)
+y_b_pred_test = model_b.predict(X_test)
+_  = plot_confusion_matrix(y_b_pred_train, y_train, target_names=iris.target_names,
+                           title="Modelo B dataset de entrenamiento", figsize=(6,6))
+print(classification_report(y_train, y_pred=y_b_pred_train, target_names=iris.target_names))
